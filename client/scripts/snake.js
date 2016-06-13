@@ -20,11 +20,8 @@ const main = ({DOM, Keys}) => {
     .scan((acc, arrow) => isMovementPossible(arrow, acc) ? acc : arrow, 'right')
     .distinctUntilChanged();
 
-  const level$ = Rx.Observable.interval(1000);
-
-  const movement$ = level$.withLatestFrom(arrow$);
-
-  const result$ = movement$
+  const movement$ = Rx.Observable.interval(1000)
+    .withLatestFrom(arrow$)
     .map(x => x[1])
     .map(x => stepByArrow[x])
     .scan(
@@ -39,12 +36,12 @@ const main = ({DOM, Keys}) => {
       {x: 4, y: 2});
 
   return {
-    DOM: result$.map(head => {
+    DOM: movement$.map(head => {
       return div(_.range(boardSize.vertical)
         .map(row => div(_.range(boardSize.horizontal)
           .map(col => span(row === (boardSize.vertical - 1 - head.y) && col === head.x ? '[+]' : '[ ]')))));
     }),
-    Log: result$
+    Log: movement$
   };
 };
 
