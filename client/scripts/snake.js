@@ -1,18 +1,45 @@
 const {h1, div, input, makeDOMDriver} = CycleDOM;
 import {makeKeysDriver} from 'cycle-keys';
 
+const boardSize = { horizontal: 9, vertical: 5 };
+const stepByArrow = {
+  left:  { x: -1, y: 0  },
+  up:    { x: 0,  y: 1  },
+  right: { x: 1,  y: 0  },
+  down:  { x: 0,  y: -1 },
+}
+
+const isMovementPossible = (arrow, acc) => 
+  stepByArrow[arrow].x + stepByArrow[acc].x === 0 &&
+  stepByArrow[arrow].y + stepByArrow[acc].y === 0;
+
 const main = ({DOM, Keys}) => {
   const arrow$ = Keys.down('left').merge(Keys.down('up')).merge(Keys.down('right')).merge(Keys.down('down'))
-    .map(x => x.keyIdentifier)
+    .map(x => x.keyIdentifier.toLowerCase())
+    .scan((acc, arrow) => isMovementPossible(arrow, acc) ? acc : arrow, 'right')
     .distinctUntilChanged();
 
   const level$ = Rx.Observable.interval(1000);
 
   const movement$ = level$.withLatestFrom(arrow$);
 
+  const result$ = movement$
+    .map(x => x[1])
+    .map(x => stepByArrow[x])
+    .scan(
+      (acc, movement) => {
+        const horizontalLocation = (acc.x + movement.x) % boardSize.horizontal;
+        const verticalLocation = (acc.y + movement.y) % boardSize.vertical;
+        return {
+          x: horizontalLocation < 0 ? boardSize.horizontal - 1 : horizontalLocation,
+          y: verticalLocation < 0 ? boardSize.vertical - 1 : verticalLocation
+        }
+      },
+      {x: 5, y: 3});
+
   return {
     DOM: movement$.map(x => div([h1(`Moving ${x}`)])),
-    Log: movement$
+    Log: result$
   };
 };
 
@@ -23,3 +50,24 @@ const drivers = {
 }
 
 Cycle.run(main, drivers);
+
+
+/*
+(x,y) = (5,3)
+
+[
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,1,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0]
+]
+
+
+---------
+---------
+----X----
+---------
+---------
+
+*/
