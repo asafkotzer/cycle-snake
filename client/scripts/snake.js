@@ -1,5 +1,6 @@
-const {h1, div, input, makeDOMDriver} = CycleDOM;
+const {span, div, input, makeDOMDriver} = CycleDOM;
 import {makeKeysDriver} from 'cycle-keys';
+import _ from 'lodash';
 
 const boardSize = { horizontal: 9, vertical: 5 };
 const stepByArrow = {
@@ -35,10 +36,14 @@ const main = ({DOM, Keys}) => {
           y: verticalLocation < 0 ? boardSize.vertical - 1 : verticalLocation
         }
       },
-      {x: 5, y: 3});
+      {x: 4, y: 2});
 
   return {
-    DOM: movement$.map(x => div([h1(`Moving ${x}`)])),
+    DOM: result$.map(head => {
+      return div(_.range(boardSize.vertical)
+        .map(row => div(_.range(boardSize.horizontal)
+          .map(col => span(row === (boardSize.vertical - 1 - head.y) && col === head.x ? '[+]' : '[ ]')))));
+    }),
     Log: result$
   };
 };
@@ -50,24 +55,3 @@ const drivers = {
 }
 
 Cycle.run(main, drivers);
-
-
-/*
-(x,y) = (5,3)
-
-[
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,1,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0]
-]
-
-
----------
----------
-----X----
----------
----------
-
-*/
