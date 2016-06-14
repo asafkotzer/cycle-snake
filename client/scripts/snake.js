@@ -30,19 +30,12 @@ const main = ({DOM, Keys}) => {
         const headX = (acc[0].x + movement.x) % boardSize.horizontal;
         const headY = (acc[0].y + movement.y) % boardSize.vertical;
 
-        // return an array s.t. the head moved to the new location, and the rest moved to arr[i-1]
-        const res = acc.map((_, i, arr) => 
+        return acc.map((_, i, arr) => 
           i === 0 ? {
               x: headX < 0 ? boardSize.horizontal - 1 : headX,
               y: headY < 0 ? boardSize.vertical - 1 : headY 
             } : arr[i-1]
         );
-        console.log(res);
-
-                            //  WHY IS IT NAN ALL THE TIME?
-
-
-        return res;
       },
       [{x: 4, y: 2}, {x: 3, y:2}, {x: 2, y:2}]);
 
@@ -63,20 +56,3 @@ const drivers = {
 }
 
 Cycle.run(main, drivers);
-
-
-/*
-
-moving down:
-[ ][ ][ ][ ][ ][ ][ ][ ][ ]   >>>   [ ][ ][ ][ ][ ][ ][ ][ ][ ]
-[ ][ ][ ][ ][ ][ ][ ][ ][ ]   >>>   [ ][ ][ ][ ][ ][ ][ ][ ][ ]
-[ ][+][+][+][ ][ ][ ][ ][ ]   >>>   [ ][ ][+][+][ ][ ][ ][ ][ ]
-[ ][ ][ ][ ][ ][ ][ ][ ][ ]   >>>   [ ][ ][ ][+][ ][ ][ ][ ][ ]
-[ ][ ][ ][ ][ ][ ][ ][ ][ ]   >>>   [ ][ ][ ][ ][ ][ ][ ][ ][ ]
-
-
-
-Linked list?
-
-
-*/
