@@ -27,23 +27,39 @@ const main = ({DOM, Keys}) => {
     .map(x => stepByArrow[x])
     .scan(
       (acc, movement) => {
-        const headX = (acc[0].x + movement.x) % boardSize.horizontal;
-        const headY = (acc[0].y + movement.y) % boardSize.vertical;
+        const headX = (acc.snake[0].x + movement.x) % boardSize.horizontal;
+        const headY = (acc.snake[0].y + movement.y) % boardSize.vertical;
 
-        return acc.map((_, i, arr) => 
+        const snake = acc.snake.map((_, i, arr) =>
           i === 0 ? {
-              x: headX < 0 ? boardSize.horizontal - 1 : headX,
-              y: headY < 0 ? boardSize.vertical - 1 : headY 
-            } : arr[i-1]
+            x: headX < 0 ? boardSize.horizontal - 1 : headX,
+            y: headY < 0 ? boardSize.vertical - 1 : headY 
+          } : arr[i-1]
         );
+
+        let token = acc.token;
+        if (snake[0].x === token.x && snake[0].y === token.y) {
+          do {
+            token = {
+              x: _.random(boardSize.horizontal - 1),
+              y: _.random(boardSize.vertical - 1)
+            };
+          } while (_.some(snake, cell => token.x === cell.x && token.y === cell.y))
+          snake.push(acc.snake[acc.snake.length - 1]);
+        }
+
+        return {
+          snake,
+          token
+        };
       },
-      [{x: 4, y: 2}, {x: 3, y:2}, {x: 2, y:2}]);
+      {snake: [{x: 4, y: 2}, {x: 3, y:2}, {x: 2, y:2}], token: {x: 7, y: 2}});
 
   return {
-    DOM: movement$.map(snake => {
+    DOM: movement$.map(board => {
       return div(_.range(boardSize.vertical)
         .map(row => div(_.range(boardSize.horizontal)
-           .map(col => span(_.some(snake, p => p.x === col && (boardSize.vertical - 1 - p.y) === row) ? '[+]' : '[ ]')))));
+           .map(col => span(_.some(board.snake.concat(board.token), p => p.x === col && (boardSize.vertical - 1 - p.y) === row) ? '[+]' : '[ ]')))));
     }),
     Log: movement$
   };
