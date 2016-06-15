@@ -21,6 +21,13 @@ const move = (previous, head) => previous.map((_, i, arr) =>
     } : arr[i-1]
   );
 
+const getError = (snake, head) => {
+  if (_.some(_.tail(snake), cell => head.x === cell.x && head.y === cell.y)) return 'self';
+  if (head.x >= boardSize.horizontal || head.y >= boardSize.vertical) return 'wall';
+  if (head.x < 0 || head.y < 0) return 'wall';
+  return null;
+};
+
 const main = ({DOM, Keys}) => {
   const arrow$ = Keys.down('left').merge(Keys.down('up')).merge(Keys.down('right')).merge(Keys.down('down'))
     .map(x => x.keyIdentifier.toLowerCase())
@@ -34,8 +41,8 @@ const main = ({DOM, Keys}) => {
     .scan(
       (acc, movement) => {
         const head = {
-          x: (acc.snake[0].x + movement.x) % boardSize.horizontal,
-          y: (acc.snake[0].y + movement.y) % boardSize.vertical
+          x: acc.snake[0].x + movement.x,
+          y: acc.snake[0].y + movement.y
         };
 
         let snake = move(acc.snake, head);
@@ -50,19 +57,21 @@ const main = ({DOM, Keys}) => {
           } while (_.some(snake, cell => token.x === cell.x && token.y === cell.y))
           snake = snake.concat(acc.snake[acc.snake.length - 1]);
         }
-
+        
         return {
           snake,
-          token
+          token,
+          error: getError(snake, head)
         };
       },
       {snake: [{x: 4, y: 2}, {x: 3, y:2}, {x: 2, y:2}], token: {x: 7, y: 2}});
+    .takeWhile(board => !board.error) // consider replacing with takeUntil to show 'Game over'
 
   return {
     DOM: movement$.map(board => {
       return div(_.range(boardSize.vertical)
         .map(row => div(_.range(boardSize.horizontal)
-           .map(col => span(_.some(board.snake.concat(board.token), p => p.x === col && (boardSize.vertical - 1 - p.y) === row) ? '[+]' : '[ ]')))));
+          .map(col => span(_.some(board.snake.concat(board.token), p => p.x === col && (boardSize.vertical - 1 - p.y) === row) ? '[+]' : '[ ]')))));
     }),
     Log: movement$
   };
