@@ -9,16 +9,22 @@ const stepByArrow = {
   right: { x: 1,  y: 0  },
   down:  { x: 0,  y: -1 },
 }
-const length = 3;
 
-const isMovementPossible = (arrow, acc) => 
+const isMovementPossible = (acc, arrow) => 
   stepByArrow[arrow].x + stepByArrow[acc].x === 0 &&
   stepByArrow[arrow].y + stepByArrow[acc].y === 0;
+
+const move = (previous, head) => previous.map((_, i, arr) =>
+    i === 0 ? {
+      x: head.x < 0 ? boardSize.horizontal - 1 : head.x,
+      y: head.y < 0 ? boardSize.vertical - 1 : head.y 
+    } : arr[i-1]
+  );
 
 const main = ({DOM, Keys}) => {
   const arrow$ = Keys.down('left').merge(Keys.down('up')).merge(Keys.down('right')).merge(Keys.down('down'))
     .map(x => x.keyIdentifier.toLowerCase())
-    .scan((acc, arrow) => isMovementPossible(arrow, acc) ? acc : arrow, 'right')
+    .scan((acc, arrow) => isMovementPossible(acc, arrow) ? acc : arrow, 'right')
     .distinctUntilChanged();
 
   const movement$ = Rx.Observable.interval(1000)
@@ -27,15 +33,12 @@ const main = ({DOM, Keys}) => {
     .map(x => stepByArrow[x])
     .scan(
       (acc, movement) => {
-        const headX = (acc.snake[0].x + movement.x) % boardSize.horizontal;
-        const headY = (acc.snake[0].y + movement.y) % boardSize.vertical;
+        const head = {
+          x: (acc.snake[0].x + movement.x) % boardSize.horizontal,
+          y: (acc.snake[0].y + movement.y) % boardSize.vertical
+        };
 
-        const snake = acc.snake.map((_, i, arr) =>
-          i === 0 ? {
-            x: headX < 0 ? boardSize.horizontal - 1 : headX,
-            y: headY < 0 ? boardSize.vertical - 1 : headY 
-          } : arr[i-1]
-        );
+        let snake = move(acc.snake, head);
 
         let token = acc.token;
         if (snake[0].x === token.x && snake[0].y === token.y) {
@@ -45,7 +48,7 @@ const main = ({DOM, Keys}) => {
               y: _.random(boardSize.vertical - 1)
             };
           } while (_.some(snake, cell => token.x === cell.x && token.y === cell.y))
-          snake.push(acc.snake[acc.snake.length - 1]);
+          snake = snake.concat(acc.snake[acc.snake.length - 1]);
         }
 
         return {
