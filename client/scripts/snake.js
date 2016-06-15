@@ -14,12 +14,27 @@ const isMovementPossible = (acc, arrow) =>
   stepByArrow[arrow].x + stepByArrow[acc].x === 0 &&
   stepByArrow[arrow].y + stepByArrow[acc].y === 0;
 
-const move = (previous, head) => previous.map((_, i, arr) =>
-    i === 0 ? {
-      x: head.x < 0 ? boardSize.horizontal - 1 : head.x,
-      y: head.y < 0 ? boardSize.vertical - 1 : head.y 
-    } : arr[i-1]
-  );
+const move = (previous, head, previousToken) => {
+  let snake = previous.map((_, i, arr) =>
+  i === 0 ? {
+    x: head.x < 0 ? boardSize.horizontal - 1 : head.x,
+    y: head.y < 0 ? boardSize.vertical - 1 : head.y 
+  } : arr[i-1]);
+
+  let token = previousToken;
+  if (snake[0].x === token.x && snake[0].y === token.y) {
+    do {
+      token = {
+        x: _.random(boardSize.horizontal - 1),
+        y: _.random(boardSize.vertical - 1)
+      };
+    } while (_.some(snake, cell => token.x === cell.x && token.y === cell.y))
+    snake = snake.concat(previous[previous.length - 1]);
+  }
+
+  return [snake, token];
+};
+
 
 const getError = (snake, head) => {
   if (_.some(_.tail(snake), cell => head.x === cell.x && head.y === cell.y)) return 'self';
@@ -45,18 +60,7 @@ const main = ({DOM, Keys}) => {
           y: acc.snake[0].y + movement.y
         };
 
-        let snake = move(acc.snake, head);
-
-        let token = acc.token;
-        if (snake[0].x === token.x && snake[0].y === token.y) {
-          do {
-            token = {
-              x: _.random(boardSize.horizontal - 1),
-              y: _.random(boardSize.vertical - 1)
-            };
-          } while (_.some(snake, cell => token.x === cell.x && token.y === cell.y))
-          snake = snake.concat(acc.snake[acc.snake.length - 1]);
-        }
+        const [snake, token] = move(acc.snake, head, acc.token);
         
         return {
           snake,
@@ -64,8 +68,8 @@ const main = ({DOM, Keys}) => {
           error: getError(snake, head)
         };
       },
-      {snake: [{x: 4, y: 2}, {x: 3, y:2}, {x: 2, y:2}], token: {x: 7, y: 2}});
-    .takeWhile(board => !board.error) // consider replacing with takeUntil to show 'Game over'
+      {snake: [{x: 4, y: 2}, {x: 3, y:2}, {x: 2, y:2}], token: {x: 7, y: 2}})
+    .takeWhile(board => !board.error) 
 
   return {
     DOM: movement$.map(board => {
