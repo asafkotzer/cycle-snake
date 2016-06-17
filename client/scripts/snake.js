@@ -2,7 +2,10 @@ const {span, div, input, makeDOMDriver} = CycleDOM;
 import {makeKeysDriver} from 'cycle-keys';
 import _ from 'lodash';
 
-const boardSize = { horizontal: 9, vertical: 5 };
+const interval = 100;
+const boardStyle = {style: { 'display': 'inline-block', 'border-width': '1px', 'border-style': 'solid', 'padding': '5px' }};
+const rowStyle = {style: { height: '10px' }};
+const boardSize = { horizontal: 20, vertical: 20 };
 const stepByArrow = {
   left:  { x: -1, y: 0  },
   up:    { x: 0,  y: 1  },
@@ -35,6 +38,9 @@ const move = (previous, head, previousToken) => {
   return [snake, token];
 };
 
+const shouldDraw = (board, row, col) => _.some(
+  board.snake.concat(board.token),
+  p => p.x === col && (boardSize.vertical - 1 - p.y) === row);
 
 const getError = (snake, head) => {
   if (_.some(_.tail(snake), cell => head.x === cell.x && head.y === cell.y)) return 'self';
@@ -44,12 +50,12 @@ const getError = (snake, head) => {
 };
 
 const main = ({DOM, Keys}) => {
-  const arrow$ = Keys.down('left').merge(Keys.down('up')).merge(Keys.down('right')).merge(Keys.down('down'))
+  const arrow$ = Keys.down('left').merge(Keys.down('up')).merge(Keys.down('right')).merge(Keys.down('down'))  
     .map(x => x.keyIdentifier.toLowerCase())
     .scan((acc, arrow) => isMovementPossible(acc, arrow) ? acc : arrow, 'right')
     .distinctUntilChanged();
 
-  const movement$ = Rx.Observable.interval(1000)
+  const movement$ = Rx.Observable.interval(interval)
     .withLatestFrom(arrow$)
     .map(x => x[1])
     .map(x => stepByArrow[x])
@@ -73,9 +79,9 @@ const main = ({DOM, Keys}) => {
 
   return {
     DOM: movement$.map(board => {
-      return div(_.range(boardSize.vertical)
-        .map(row => div(_.range(boardSize.horizontal)
-          .map(col => span(_.some(board.snake.concat(board.token), p => p.x === col && (boardSize.vertical - 1 - p.y) === row) ? '[+]' : '[ ]')))));
+      return div(boardStyle, _.range(boardSize.vertical)
+        .map(row => div(rowStyle, _.range(boardSize.horizontal)
+          .map(col => div({style: { display: 'inline-block', width: '10px', height: '10px', 'background-color': shouldDraw(board, row, col) ? 'gray' : 'white'}})))));
     }),
     Log: movement$
   };
